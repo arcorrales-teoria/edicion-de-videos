@@ -1,3 +1,14 @@
 .DS_Store
+__pycache__/
+node_modules/
+frames/
+frames-*/
+
 # captura sin difuminar de la bandeja de Gmail (datos personales); el video usa gmail_blur.png
-Videos personas/scripts/video-13-jobs/ref/gmail.png
+proyectos/personas/13-jobs/ref/gmail.png
+
+# material crudo y entregas pesadas: no se suben a git (ver CLAUDE.md, sección Entrada y salida)
+entrada/*
+salida/*
+!entrada/.gitkeep
+!salida/.gitkeep
