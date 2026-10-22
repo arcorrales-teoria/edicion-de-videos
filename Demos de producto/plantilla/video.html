@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Demo de producto · plantilla</title>
+<!--
+  PLANTILLA DE DEMO DE PRODUCTO (ver "Guia de demos de producto.md").
+  - Horizontal 1920x1080: video.html          Vertical (historias) 1080x1920: video.html?formato=historia
+  - Cambia CONFIG, reemplaza las escenas de ejemplo y deja intactos el motor (tiempo virtual) y window.__frame.
+-->
+<style>
+  @font-face { font-family: Geist; src: url(node_modules/geist/dist/fonts/geist-sans/Geist-Regular.woff2) format("woff2"); font-weight: 400; }
+  @font-face { font-family: Geist; src: url(node_modules/geist/dist/fonts/geist-sans/Geist-Medium.woff2) format("woff2"); font-weight: 500; }
+  @font-face { font-family: Geist; src: url(node_modules/geist/dist/fonts/geist-sans/Geist-SemiBold.woff2) format("woff2"); font-weight: 600; }
+  @font-face { font-family: GeistMono; src: url(node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { overflow: hidden; background: #0b0b0b; color: #ededed; font-family: Geist, sans-serif; -webkit-font-smoothing: antialiased; }
+  #bg { position: absolute; inset: 0; }
+  #stage { position: absolute; inset: 0; perspective: 2200px; }
+  .abs { position: absolute; will-change: transform, opacity, filter; }
+  .center { left: 50%; top: 50%; }
+  .w { display: inline-block; margin-right: 0.22em; }
+  .headline { font-weight: 600; letter-spacing: -0.05em; line-height: 1.02; text-align: center; }
+  .caption { font-weight: 600; letter-spacing: -0.045em; line-height: 1.04; }
+  .kicker { font-family: GeistMono, monospace; font-size: 22px; letter-spacing: 0.18em; text-transform: uppercase; color: #8a8a8a; margin-bottom: 22px; }
+  .muted { color: #8a8a8a; }
+  .brand { display: flex; align-items: flex-end; gap: 20px; }
+  .bars { display: flex; align-items: flex-end; gap: 9px; height: 96px; }
+  .bars i { display: block; width: 15px; border-radius: 3px; background: #ededed; }
+  .word { font-size: 104px; font-weight: 600; letter-spacing: -0.05em; line-height: 0.9; white-space: nowrap; }
+  .byline { font-size: 34px; color: #9a9a9a; white-space: nowrap; }
+  .byline b { color: #ededed; font-weight: 500; }
+  .window { width: 1300px; border-radius: 22px; overflow: hidden; background: #111; border: 1px solid #2a2a2a; box-shadow: 0 60px 140px rgba(0,0,0,.7); }
+  .chrome { height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #171717; border-bottom: 1px solid #262626; }
+  .chrome i { width: 12px; height: 12px; border-radius: 50%; background: #3a3a3a; }
+  .chrome .url { margin-left: 18px; flex: 1; height: 28px; border-radius: 8px; background: #0f0f0f; color: #8a8a8a; font-family: GeistMono, monospace; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .screen { position: relative; width: 1300px; height: 812px; overflow: hidden; }
+  .screen img { position: absolute; inset: 0; width: 100%; height: auto; }
+  .badge { display: inline-flex; align-items: center; gap: 12px; padding: 12px 22px; border-radius: 999px; border: 1px solid #2f2f2f; background: rgba(20,20,20,.8); font-size: 26px; color: #cfcfcf; }
+  .badge i { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .url-big { font-family: GeistMono, monospace; font-size: 30px; color: #9a9a9a; }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="stage"></div>
+
+<script>
+  // Tiempo virtual: el render controla el reloj, así cada cuadro es exacto (Shaders usa performance.now y rAF).
+  window.process = { env: { NODE_ENV: "production" } };
+  let __vt = 0;
+  const __q = [];
+  performance.now = () => __vt;
+  window.requestAnimationFrame = (cb) => (__q.push(cb), __q.length);
+  window.cancelAnimationFrame = () => {};
+  window.__flushRAF = () => { const cbs = __q.splice(0); cbs.forEach((cb) => cb(__vt)); };
+</script>
+
+<script type="module">
+import { createShader } from "./node_modules/shaders/dist/js/index.js";
+
+/* ===================== CONFIG: lo único que cambia por proyecto ===================== */
+const CONFIG = {
+  producto: "job-status",
+  firma: "Andrés Corrales",
+  url: "job-status-rosy.vercel.app",
+  lema: "Tu búsqueda laboral, ordenada.",
+  etiqueta: "Gratis durante la beta",
+  acento: "#34d399",
+  duracion: 20, // segundos exactos
+  fps: 30,
+};
+/* ==================================================================================== */
+
+const STORY = new URLSearchParams(location.search).get("formato") === "historia";
+const W = STORY ? 1080 : 1920, H = STORY ? 1920 : 1080;
+document.documentElement.style.cssText = `width:${W}px;height:${H}px;--accent:${CONFIG.acento}`;
+document.body.style.cssText = `width:${W}px;height:${H}px`;
+const bg = document.getElementById("bg");
+bg.width = W; bg.height = H; bg.style.width = `${W}px`; bg.style.height = `${H}px`;
+
+const stage = document.getElementById("stage");
+const add = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); const e = t.content.firstChild; stage.appendChild(e); return e; };
+const words = (text) => text.split(" ").map((w) => `<span class="w">${w}</span>`).join(" ");
+
+/* ---------- utilidades de animación (estándar de la casa) ---------- */
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const outExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const inCubic = (x) => x * x * x;
+const inOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const lerp = (a, b, x) => a + (b - a) * x;
+/** Entrada que sube y se enfoca desde el desenfoque; salida hacia arriba. */
+function reveal(el, t, tin, tout, { dy = 40, blur = 14, dur = 0.7, outDur = 0.4, base = "" } = {}) {
+  const i = outExpo(seg(t, tin, tin + dur));
+  const o = tout == null ? 0 : inCubic(seg(t, tout, tout + outDur));
+  el.style.opacity = String(i * (1 - o));
+  el.style.filter = `blur(${(1 - i) * blur + o * blur}px)`;
+  el.style.transform = `${base} translateY(${lerp(dy, 0, i) - o * dy}px)`;
+}
+/** Igual que reveal, palabra por palabra. */
+function revealWords(el, t, tin, tout, { step = 0.08, dy = 60 } = {}) {
+  [...el.querySelectorAll(".w")].forEach((w, i) => {
+    const x = outExpo(seg(t, tin + i * step, tin + 0.65 + i * step));
+    const o = tout == null ? 0 : inCubic(seg(t, tout, tout + 0.35));
+    w.style.opacity = String(x * (1 - o));
+    w.style.filter = `blur(${(1 - x) * 16 + o * 14}px)`;
+    w.style.transform = `translateY(${(1 - x) * dy - o * 40}px)`;
+  });
+}
+const BAR_H = [38, 62, 96, 74];
+const brandHTML = (id = "") => `<div class="brand" ${id}><div class="bars"><i></i><i></i><i></i><i></i></div><div class="word">${CONFIG.producto}</div></div>`;
+
+/* ===================== ESCENAS DE EJEMPLO (reemplazar) ===================== */
+// 1. Apertura: marca + firma (0 a 2,1 s) y titular (2,0 a 3,5 s)
+const open = add(`<div class="abs center" style="display:flex;flex-direction:column;align-items:center;gap:22px">${brandHTML()}<div class="byline">by <b>${CONFIG.firma}</b></div></div>`);
+const openBars = [...open.querySelectorAll(".bars i")];
+const head = add(`<div class="abs center headline" style="font-size:${STORY ? 104 : 116}px;width:${STORY ? 940 : 1700}px">${words("Tu titular principal aquí.")}</div>`);
+
+// 2. Producto: ventana con una captura (3,5 a 9 s)
+const win = add(`<div class="abs window" style="left:${(W - 1300) / 2}px;top:${STORY ? 760 : 200}px"><div class="chrome"><i></i><i></i><i></i><div class="url">${CONFIG.url}</div></div><div class="screen"><img src="assets/captura-1.webp"></div></div>`);
+const cap = add(`<div class="abs" style="left:${STORY ? 90 : 110}px;top:${STORY ? 360 : 90}px;width:${STORY ? 900 : 1700}px"><div class="kicker">Sección</div><div class="caption" style="font-size:${STORY ? 70 : 64}px">${words("Lo que hace esta parte del producto.")}</div></div>`);
+
+// 3. Cierre: marca, lema, etiqueta + URL, firma (17 a 20 s)
+const end = add(`<div class="abs center" style="width:${STORY ? 1000 : 1600}px;display:flex;flex-direction:column;align-items:center;gap:36px;text-align:center">${brandHTML('id="eb"')}<div class="caption" id="et" style="font-size:54px;color:#cfcfcf">${CONFIG.lema}</div><div id="em" style="display:flex;${STORY ? "flex-direction:column;" : ""}gap:22px;align-items:center"><span class="badge"><i></i>${CONFIG.etiqueta}</span><span class="url-big">${CONFIG.url}</span></div><div class="byline" id="ey">by <b>${CONFIG.firma}</b></div></div>`);
+const endBars = [...end.querySelectorAll(".bars i")];
+/* ============================================================================ */
+
+/* ---------- fondo con Shaders (monocromo y sobrio; sin Godrays: son demasiado fuertes) ---------- */
+const shader = await createShader(bg, {
+  components: [
+    { id: "grad", type: "FlowingGradient", props: { colorA: "#0a0a0a", colorB: "#151516", colorC: "#1f2022", colorD: "#0c0c0d", speed: 0.5, distortion: 0.7 } },
+    { id: "dots", type: "DotGrid", props: { color: "#ffffff", density: 64, dotSize: 0.1, twinkle: 0.7, speed: 0.5 } },
+    { id: "vig", type: "Vignette", props: { color: "#000000", intensity: 0.75, radius: 0.75 } },
+    { id: "grain", type: "FilmGrain", props: { strength: 0.07 } },
+  ],
+});
+
+function render(t) {
+  // 1. Apertura
+  openBars.forEach((b, i) => { b.style.height = `${BAR_H[i] * outExpo(seg(t, 0.1 + i * 0.08, 0.7 + i * 0.08))}px`; });
+  reveal(open, t, 0.2, 1.75, { base: "translate(-50%,-50%)", dur: 0.9, outDur: 0.35 });
+  head.style.transform = "translate(-50%,-50%)";
+  revealWords(head, t, 2.0, 3.15);
+  // 2. Producto
+  const i = outExpo(seg(t, 3.5, 4.5)), o = inCubic(seg(t, 8.6, 9.0));
+  win.style.opacity = String(Math.min(1, i * 1.4) * (1 - o));
+  win.style.filter = `blur(${(1 - i) * 8 + o * 10}px)`;
+  win.style.transform = `translateY(${lerp(260, 0, i) - o * 120}px) rotateX(${lerp(24, 4, i)}deg) rotateY(${lerp(-10, -4, i)}deg) scale(${lerp(1, 1.04, seg(t, 3.5, 9)) * (STORY ? 0.76 : 1)})`;
+  reveal(cap, t, 3.9, 8.5);
+  // 3. Cierre
+  end.style.transform = "translate(-50%,-50%)";
+  endBars.forEach((b, i) => { b.style.height = `${BAR_H[i] * outExpo(seg(t, 17.05 + i * 0.08, 17.7 + i * 0.08))}px`; });
+  reveal(end.querySelector("#eb"), t, 17.1, null, { dy: 30, dur: 0.8 });
+  reveal(end.querySelector("#et"), t, 17.65, null, { dy: 24, dur: 0.8 });
+  reveal(end.querySelector("#em"), t, 18.15, null, { dy: 20, dur: 0.8 });
+  reveal(end.querySelector("#ey"), t, 18.6, null, { dy: 16, dur: 0.8 });
+  shader.update("dots", { twinkle: 0.7 + 0.3 * inOutCubic(seg(t, 16.8, 18.6)) });
+}
+
+/** Lo llama render.mjs: avanza el reloj virtual hasta el cuadro n y dibuja. No tocar. */
+window.__frame = async (n) => {
+  __vt = (n / CONFIG.fps) * 1000;
+  render(n / CONFIG.fps);
+  window.__flushRAF();
+  await new Promise((r) => setTimeout(r, 0));
+};
+await document.fonts.ready;
+await Promise.all([...document.images].map((i) => (i.complete ? 1 : new Promise((r) => (i.onload = i.onerror = r)))));
+window.__ready = true;
+</script>
+</body>
+</html>

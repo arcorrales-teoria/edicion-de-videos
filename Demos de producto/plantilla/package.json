@@ -1,0 +1,14 @@
+{
+  "name": "demo-de-producto",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "servir": "python3 -m http.server 8765",
+    "render": "node render.mjs 0 599 frames video.html 1920 1080",
+    "render:historia": "node render.mjs 0 599 frames-historia 'video.html?formato=historia' 1080 1920"
+  },
+  "dependencies": {
+    "geist": "^1.4.2",
+    "shaders": "^4.0.4"
+  }
+}

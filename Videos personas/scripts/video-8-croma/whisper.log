@@ -1,0 +1,11 @@
+/opt/homebrew/lib/python3.11/site-packages/whisper/transcribe.py:132: UserWarning: FP16 is not supported on CPU; using FP32 instead
+  warnings.warn("FP16 is not supported on CPU; using FP32 instead")
+[00:00.000 --> 00:07.080]  hay on boardings, venga, si usted ahora mismo está, venga, si usted ahora mismo está creando
+[00:07.080 --> 00:12.120]  una página web o algún producto y sus usuarios tienen que montarse en una llamada con usted
+[00:12.120 --> 00:16.920]  para entender su producto, está haciendo todo mal. ¿Por qué? Porque el on boarding
+[00:16.920 --> 00:21.580]  es lo principal, vean esos manes, esos manes literalmente crearon un on boarding lindo
+[00:21.580 --> 00:25.960]  que uno dice, pues pucha quiero ver que más hay, porque eso es lo que uno tiene que hacer,
+[00:25.960 --> 00:31.700]  uno tiene que empezar a descubrir lo que está en la página, pero que al mismo tiempo que sea lindo,
+[00:32.080 --> 00:37.400]  sea funcional y fácil de hacer, porque si no es fácil no estamos haciendo nada y sencillamente
+[00:37.400 --> 00:41.460]  lo único que estás haciendo es agregarle fricción, así que si quieres saber cómo hacer ese tipo de
+[00:41.460 --> 00:42.240]  vainas, sígueme.
